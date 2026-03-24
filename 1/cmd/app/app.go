@@ -2,10 +2,14 @@ package app
 
 import (
 	"context"
-	"log"
+	"errors"
+	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/vvigg0/wbtech-l3/l3/1/internal/handler"
@@ -37,6 +41,7 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("ошибка подключения к БД: %w", err)
 	}
+	defer db.Master.Close()
 
 	repo := repository.New(db)
 
@@ -50,7 +55,7 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("ошибка инициализации rabbit: %w", err)
 	}
-	
+	defer rabbit.Client.Close()
 
 	service := service.New(repo, rabbit)
 
@@ -59,33 +64,66 @@ func Run() error {
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigs)
 
-	go func() {
-		sig := <-sigs
-		zlog.Logger.Info().Msgf("получен сигнал завершения %v. завершение работы", sig)
-		cancel()
-	}()
+	errorCh := make(chan error, 1)
 
-	go func() {
-		if err := service.PublishNotifications(ctx); err != nil {
-			log.Fatalf("ошибка при публикации уведомлений: %v", err)
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		if err := service.PublishNotifications(ctx); err != nil && !errors.Is(err, ctx.Err()) {
+			select {
+			case errorCh <- fmt.Errorf("ошибка при публикации уведомлений: %w", err):
+			default:
 		}
-	}()
-	go func() {
-		if err := service.Rabbit.Consumer.Start(ctx); err != nil {
-			log.Fatalf("ошибка запуска consumer: %v", err)
 		}
-	}()
+	})
+	wg.Go(func() {
+		if err := service.Rabbit.Consumer.Start(ctx); err != nil && !errors.Is(err, ctx.Err()) {
+			select {
+			case errorCh <- fmt.Errorf("ошибка запуска consumer: %w", err):
+			default:
+			}
+		}
+	})
 
 	h := handler.New(service)
 
-	e := ginext.New("")
+	router := ginext.New("")
+	registerRoutes(router, h)
 
-	registerRoutes(e, h)
+	srv := &http.Server{
+		Addr:    serverPort,
+		Handler: router}
 
+	wg.Go(func() {
 	zlog.Logger.Info().Msgf("сервер запущен на %s", serverPort)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			select {
+			case errorCh <- fmt.Errorf("ошибка сервера: %w", err):
+			default:
+			}
+		}
+	})
 
-	return e.Run(serverPort)
+	var runErr error
+	select {
+	case runErr = <-errorCh:
+	case sig := <-sigs:
+		zlog.Logger.Info().Msgf("получен сигнал завершения %v. завершение работы", sig)
+	}
+	cancel()
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		if runErr == nil {
+			runErr = fmt.Errorf("принужденное завершение сервера: %w", err)
+		}
+	}
+
+	wg.Wait()
+	return runErr
 }
 
 func registerRoutes(engine *ginext.Engine, handler *handler.Handler) {
