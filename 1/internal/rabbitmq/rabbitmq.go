@@ -1,7 +1,6 @@
 package myrabbitmq
 
 import (
-	"log"
 	"time"
 
 	"github.com/wb-go/wbf/rabbitmq"
@@ -39,9 +38,8 @@ func New(connURL string, handler rabbitmq.MessageHandler) (*RabbitMQ, error) {
 
 	rabbitClient, err := rabbitmq.NewClient(cfgRabbit)
 	if err != nil {
-		log.Fatalf("ошибка создания клиента rabbitmq: %v", err)
+		return nil, err
 	}
-
 	if err := rabbitClient.DeclareExchange(
 		"notifications.exchange",
 		"direct",
@@ -50,7 +48,7 @@ func New(connURL string, handler rabbitmq.MessageHandler) (*RabbitMQ, error) {
 		false,
 		nil,
 	); err != nil {
-		log.Fatalf("Ошибка создания exchange: %v", err)
+		return nil, err
 	}
 
 	if err := rabbitClient.DeclareQueue(
@@ -61,7 +59,7 @@ func New(connURL string, handler rabbitmq.MessageHandler) (*RabbitMQ, error) {
 		false,
 		false,
 		nil); err != nil {
-		log.Fatalf("Ошибка создания очереди: %v", err)
+		return nil, err
 	}
 
 	consumer := rabbitmq.NewConsumer(
@@ -74,5 +72,5 @@ func New(connURL string, handler rabbitmq.MessageHandler) (*RabbitMQ, error) {
 
 	publisher := rabbitmq.NewPublisher(rabbitClient, "notifications.exchange", "text/plain")
 
-	return &RabbitMQ{Publisher: publisher, Consumer: consumer}
+	return &RabbitMQ{Client: rabbitClient, Publisher: publisher, Consumer: consumer}, nil
 }
