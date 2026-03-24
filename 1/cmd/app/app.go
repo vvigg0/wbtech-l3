@@ -130,5 +130,5 @@ func registerRoutes(engine *ginext.Engine, handler *handler.Handler) {
 	engine.GET("/notify/:id", handler.GetNotificationStatus)
 	engine.POST("/notify", handler.CreateNotification)
 
-	engine.DELETE("/notify/:id", handler.UpdateNotificationStatus)
+	engine.DELETE("/notify/:id", handler.DeleteNotification)
 }
