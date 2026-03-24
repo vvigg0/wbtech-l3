@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"time"
 )
 
@@ -15,12 +14,10 @@ func (s *Service) PublishNotifications(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			log.Println("Загружаем уведомления")
 			notifications, err := s.repo.CheckNotifications()
 			if err != nil {
 				return err
 			}
-			log.Println("нашел ", len(notifications), "уведомлений")
 			for _, n := range notifications {
 				marshalledN, err := json.Marshal(n)
 				if err != nil {
