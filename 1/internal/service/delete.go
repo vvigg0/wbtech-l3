@@ -1,5 +1,5 @@
 package service
 
-func (s *Service) UpdateNotificationStatus(id int, newStatus string) error {
-	return s.repo.UpdateNotificationStatus(id, newStatus)
+func (s *Service) DeleteNotification(id int) error {
+	return s.repo.DeleteNotification(id)
 }
