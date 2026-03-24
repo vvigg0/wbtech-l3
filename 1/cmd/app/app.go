@@ -22,13 +22,10 @@ import (
 func Run() error {
 	zlog.Init()
 
-	// открываем файл с env
-	err := godotenv.Load("../.env")
-	if err != nil {
-		log.Fatalf("Ошибка загрузки env файла: %v\n", err)
+	if err := godotenv.Load("../.env"); err != nil {
+		return fmt.Errorf("ошибка загрузки env файла: %w", err)
 	}
 
-	//извлекаем все нужные переменные
 	dsn := os.Getenv("DB_DSN")
 	serverPort := os.Getenv("PORT")
 	rabbitURL := os.Getenv("RABBITMQ_URL")
@@ -38,17 +35,22 @@ func Run() error {
 	opts := &dbpg.Options{MaxOpenConns: 10, MaxIdleConns: 5}
 	db, err := dbpg.New(dsn, nil, opts)
 	if err != nil {
-		log.Fatalf("Ошибка подключения к БД: %v", err)
+		return fmt.Errorf("ошибка подключения к БД: %w", err)
 	}
 
 	repo := repository.New(db)
 
 	bot, err := senderTG.New(botToken, proxy)
 	if err != nil {
-		log.Fatalf("ошибка подключения к боту: %v", err)
+		return fmt.Errorf("ошибка подключения к боту: %w", err)
 	}
-	proc := processor.New(bot)
-	rabbit := myrabbitmq.New(rabbitURL, proc.HandleMessage)
+
+	proc := processor.New(bot, repo)
+	rabbit, err := myrabbitmq.New(rabbitURL, proc.HandleMessage)
+	if err != nil {
+		return fmt.Errorf("ошибка инициализации rabbit: %w", err)
+	}
+	
 
 	service := service.New(repo, rabbit)
 
