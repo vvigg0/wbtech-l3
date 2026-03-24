@@ -70,7 +70,7 @@ func New(connURL string, handler rabbitmq.MessageHandler) (*RabbitMQ, error) {
 			Workers:     1},
 		handler)
 
-	publisher := rabbitmq.NewPublisher(rabbitClient, "notifications.exchange", "text/plain")
+	publisher := rabbitmq.NewPublisher(rabbitClient, "notifications.exchange", "application/json")
 
 	return &RabbitMQ{Client: rabbitClient, Publisher: publisher, Consumer: consumer}, nil
 }
