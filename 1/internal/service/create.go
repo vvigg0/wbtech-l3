@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/vvigg0/wbtech-l3/l3/1/internal/dto"
@@ -25,10 +27,10 @@ func (s *Service) CreateNotifications(c context.Context, req dto.CreateNotificat
 	for range workers {
 		wg.Go(func() { s.worker(c, notifsCh, IDsCh) })
 	}
-
-	for _, n := range req.Notifs {
+	var errorBuilder strings.Builder
+	for i, n := range req.Notifs {
 		if n.Text == "" || n.SendAt.IsZero() || n.TgID == 0 {
-			continue
+			fmt.Fprintf(&errorBuilder, "%v - заполнены не все поля | ", i+1)
 		}
 		notifsCh <- n
 	}
@@ -45,6 +47,11 @@ func (s *Service) CreateNotifications(c context.Context, req dto.CreateNotificat
 		ids = append(ids, id)
 	}
 
+	errStr := strings.TrimRight(errorBuilder.String(), " | ")
+	errs := fmt.Errorf("%v", errStr)
+	if len(errs.Error()) != 0 {
+		return ids, errs
+	}
 	return ids, nil
 }
 
