@@ -4,26 +4,25 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/vvigg0/wbtech-l3/l3/1/internal/model"
 )
 
+type NotificationStatusUpdater interface {
+	UpdateNotificationStatus(id int, newStatus string) error
+}
 type TelegramSender interface {
 	SendNotification(chatID int64, text string) error
 }
-type Job struct {
-	ChatID int64  `json:"chat_id"`
-	Text   string `json:"text"`
-}
 
 type Processor struct {
-	tg TelegramSender
+	tg      TelegramSender
+	updater NotificationStatusUpdater
 }
 
-func New(tg TelegramSender) *Processor {
-	return &Processor{tg: tg}
+func New(tg TelegramSender, updater NotificationStatusUpdater) *Processor {
+	return &Processor{tg: tg, updater: updater}
 }
 
 func (p *Processor) HandleMessage(ctx context.Context, d amqp091.Delivery) error {
@@ -35,6 +34,8 @@ func (p *Processor) HandleMessage(ctx context.Context, d amqp091.Delivery) error
 	if err := p.tg.SendNotification(notif.TgID, notif.Text); err != nil {
 		return fmt.Errorf("tg bot ошибка отправки сообщения: %w", err)
 	}
-	log.Printf("уведомление отправлено")
+	if err := p.updater.UpdateNotificationStatus(notif.ID, "sent"); err != nil {
+		return fmt.Errorf("ошибка обновления статуса на 'sent': %w", err)
+	}
 	return nil
 }
