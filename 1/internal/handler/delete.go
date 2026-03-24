@@ -10,23 +10,25 @@ import (
 	"github.com/wb-go/wbf/zlog"
 )
 
-func (h *Handler) UpdateNotificationStatus(ctx *ginext.Context) {
+func (h *Handler) DeleteNotification(ctx *ginext.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		zlog.Logger.Error().Msgf("invalid id: %s", err.Error())
-		ctx.JSON(http.StatusBadRequest, ginext.H{"err": err.Error()})
+		zlog.Logger.Error().Msgf("invalid id: %v", err)
+		ctx.JSON(http.StatusBadRequest, ginext.H{"err": err})
 		return
 	}
 
-	err = h.srvc.UpdateNotificationStatus(id, "cancelled")
+	err = h.srvc.DeleteNotification(id)
+
 	if err != nil {
-		zlog.Logger.Error().Msgf("не удалось обновить статус уведомления: %s", err.Error())
+		zlog.Logger.Error().Msgf("не удалось удалить уведомление: %v", err)
 		if errors.Is(err, repository.ErrNoNotification) {
 			ctx.JSON(http.StatusBadRequest, ginext.H{
-				"err": err.Error(),
+				"err": err,
 			})
+			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ginext.H{"err": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, ginext.H{"err": err})
 		return
 	}
 
