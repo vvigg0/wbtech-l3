@@ -9,11 +9,12 @@ import (
 )
 
 type RabbitMQ struct {
+	Client    *rabbitmq.RabbitClient
 	Publisher *rabbitmq.Publisher
 	Consumer  *rabbitmq.Consumer
 }
 
-func New(connURL string, handler rabbitmq.MessageHandler) *RabbitMQ {
+func New(connURL string, handler rabbitmq.MessageHandler) (*RabbitMQ, error) {
 
 	cfgRabbit := rabbitmq.ClientConfig{
 		URL:            connURL,
