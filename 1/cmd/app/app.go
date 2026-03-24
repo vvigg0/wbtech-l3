@@ -74,7 +74,7 @@ func Run() error {
 			select {
 			case errorCh <- fmt.Errorf("ошибка при публикации уведомлений: %w", err):
 			default:
-		}
+			}
 		}
 	})
 	wg.Go(func() {
@@ -96,7 +96,7 @@ func Run() error {
 		Handler: router}
 
 	wg.Go(func() {
-	zlog.Logger.Info().Msgf("сервер запущен на %s", serverPort)
+		zlog.Logger.Info().Msgf("сервер запущен на %s", serverPort)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			select {
 			case errorCh <- fmt.Errorf("ошибка сервера: %w", err):
