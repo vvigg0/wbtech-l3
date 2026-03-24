@@ -23,7 +23,7 @@ func (h *Handler) DeleteNotification(ctx *ginext.Context) {
 	if err != nil {
 		zlog.Logger.Error().Msgf("не удалось удалить уведомление: %v", err)
 		if errors.Is(err, repository.ErrNoNotification) {
-			ctx.JSON(http.StatusBadRequest, ginext.H{
+			ctx.JSON(http.StatusNotFound, ginext.H{
 				"err": err,
 			})
 			return
