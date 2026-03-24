@@ -7,6 +7,7 @@ import (
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/vvigg0/wbtech-l3/l3/1/internal/model"
+	"github.com/wb-go/wbf/zlog"
 )
 
 type NotificationStatusUpdater interface {
@@ -35,7 +36,7 @@ func (p *Processor) HandleMessage(ctx context.Context, d amqp091.Delivery) error
 		return fmt.Errorf("tg bot ошибка отправки сообщения: %w", err)
 	}
 	if err := p.updater.UpdateNotificationStatus(notif.ID, "sent"); err != nil {
-		return fmt.Errorf("ошибка обновления статуса на 'sent': %w", err)
+		zlog.Logger.Error().Msgf("уведомление отправлено пользователю, но статус не обновился для notification_id=%d: %v", notif.ID, err)
 	}
 	return nil
 }

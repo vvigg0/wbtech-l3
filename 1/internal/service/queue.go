@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"time"
+
+	"github.com/wb-go/wbf/zlog"
 )
 
 func (s *Service) PublishNotifications(ctx context.Context) error {
@@ -26,7 +28,9 @@ func (s *Service) PublishNotifications(ctx context.Context) error {
 				if err := s.Rabbit.Publisher.Publish(ctx, marshalledN, "notifications"); err != nil {
 					return err
 				}
-				s.repo.UpdateNotificationStatus(n.ID, "queued")
+				if err := s.repo.UpdateNotificationStatus(n.ID, "queued"); err != nil {
+					zlog.Logger.Error().Msgf("уведомление отправлено в очередь, но статус не обновился для notification_id=%d: %v", n.ID, err)
+				}
 			}
 		}
 	}
