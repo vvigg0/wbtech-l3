@@ -20,20 +20,21 @@ func (r *Repository) UpdateNotificationStatus(id int, newStatus string) error {
 	return nil
 }
 
-func (r *Repository) DeleteNotification(id int) error {
-	query := "DELETE FROM notifications WHERE id=$1"
+func (r *Repository) CancelNotification(id int) error {
+	query := "SELECT status FROM notifications WHERE id=$1"
 
-	res, err := r.Master.Exec(query, id)
-	if err != nil {
+	var status string
+	if err := r.Master.QueryRow(query, id).Scan(&status); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNoNotification
+		}
 		return err
 	}
 
-	aff, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if aff == 0 {
-		return ErrNoNotification
+	if status == "active" {
+		if err := r.UpdateNotificationStatus(id, "cancelled"); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -10,7 +10,7 @@ import (
 	"github.com/wb-go/wbf/zlog"
 )
 
-func (h *Handler) DeleteNotification(ctx *ginext.Context) {
+func (h *Handler) CancelNotification(ctx *ginext.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		zlog.Logger.Error().Msgf("invalid id: %v", err)
@@ -18,10 +18,10 @@ func (h *Handler) DeleteNotification(ctx *ginext.Context) {
 		return
 	}
 
-	err = h.srvc.DeleteNotification(id)
+	err = h.srvc.CancelNotification(id)
 
 	if err != nil {
-		zlog.Logger.Error().Msgf("не удалось удалить уведомление: %v", err)
+		zlog.Logger.Error().Msgf("не удалось отменить уведомление: %v", err)
 		if errors.Is(err, repository.ErrNoNotification) {
 			ctx.JSON(http.StatusNotFound, ginext.H{
 				"err": err,
@@ -33,5 +33,5 @@ func (h *Handler) DeleteNotification(ctx *ginext.Context) {
 	}
 
 	zlog.Logger.Info().Msgf("DELETE запрос по уведомлению с id=%v прошел успешно", id)
-	ctx.JSON(http.StatusOK, ginext.H{"res": "успешно удалено"})
+	ctx.JSON(http.StatusOK, ginext.H{"res": "успешно отменено"})
 }
