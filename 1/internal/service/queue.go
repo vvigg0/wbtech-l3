@@ -25,7 +25,7 @@ func (s *Service) PublishNotifications(ctx context.Context) error {
 				if err != nil {
 					return err
 				}
-				if err := s.Rabbit.Publisher.Publish(ctx, marshalledN, "notifications"); err != nil {
+				if err := s.publisher.Publish(ctx, marshalledN, "notifications"); err != nil {
 					return err
 				}
 				if err := s.repo.UpdateNotificationStatus(n.ID, "queued"); err != nil {
