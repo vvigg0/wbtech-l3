@@ -57,7 +57,7 @@ func Run() error {
 	}
 	defer rabbit.Client.Close()
 
-	service := service.New(repo, rabbit)
+	service := service.New(repo, rabbit.Publisher)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
