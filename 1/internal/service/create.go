@@ -31,6 +31,7 @@ func (s *Service) CreateNotifications(c context.Context, req dto.CreateNotificat
 	for i, n := range req.Notifs {
 		if n.Text == "" || n.SendAt.IsZero() || n.TgID == 0 {
 			fmt.Fprintf(&errorBuilder, "%v - заполнены не все поля | ", i+1)
+			continue
 		}
 		notifsCh <- n
 	}
