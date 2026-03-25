@@ -1,5 +1,10 @@
 package repository
 
+import (
+	"database/sql"
+	"errors"
+)
+
 func (r *Repository) UpdateNotificationStatus(id int, newStatus string) error {
 	query := "UPDATE notifications SET status=$1 WHERE id=$2"
 
