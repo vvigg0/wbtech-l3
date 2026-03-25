@@ -78,7 +78,7 @@ func Run() error {
 		}
 	})
 	wg.Go(func() {
-		if err := service.Rabbit.Consumer.Start(ctx); err != nil && !errors.Is(err, ctx.Err()) {
+		if err := rabbit.Consumer.Start(ctx); err != nil && !errors.Is(err, ctx.Err()) {
 			select {
 			case errorCh <- fmt.Errorf("ошибка запуска consumer: %w", err):
 			default:
