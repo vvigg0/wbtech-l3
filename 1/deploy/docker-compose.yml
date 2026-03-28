@@ -1,0 +1,71 @@
+name: notifications
+services:
+    server:
+      build:
+        context: ../
+        dockerfile: deploy/Dockerfile
+      ports:
+        - "8080:8080"
+      depends_on:
+        notify_db:
+          condition: service_healthy
+        rabbit:
+          condition: service_healthy
+      environment:
+        POSTGRES_HOST: ${POSTGRES_HOST}
+        POSTGRES_PORT: ${POSTGRES_PORT}
+        POSTGRES_DB: ${POSTGRES_DB}
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      env_file:
+        - .env
+      networks:
+        - delayed-notifier-network
+
+    rabbit:
+      image: rabbitmq:4.2
+      restart: always
+      ports: 
+        - "5672:5672"
+        - "15672:15672"
+      healthcheck:
+        test: ["CMD", "rabbitmqctl", "status"]
+        interval: 5s
+        timeout: 5s
+        retries: 10
+        start_period: 15s
+
+      environment:
+        RABBITMQ_DEFAULT_USER: guest
+        RABBITMQ_DEFAULT_PASSWORD: guest
+      volumes:
+        - rabbitmq_data:/var/lib/rabbitmq
+      networks:
+        - delayed-notifier-network
+    notify_db:
+      image: postgres:17
+      container_name: delayed-notifier-db
+      restart: unless-stopped
+      ports:
+        - "5432:5432"
+      healthcheck:
+        test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+        interval: 5s
+        timeout: 5s
+        retries: 3
+      environment:
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        POSTGRES_DB: ${POSTGRES_DB}
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+        - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      networks:
+        - delayed-notifier-network
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+networks:
+  delayed-notifier-network:
+    driver: bridge

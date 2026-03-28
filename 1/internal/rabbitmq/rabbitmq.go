@@ -18,9 +18,9 @@ func New(connURL string, handler rabbitmq.MessageHandler) (*RabbitMQ, error) {
 	cfgRabbit := rabbitmq.ClientConfig{
 		URL:            connURL,
 		ConnectionName: "notifications",
-		ConnectTimeout: 10 * time.Second,
+		ConnectTimeout: 20 * time.Second,
 		ReconnectStrat: retry.Strategy{
-			Attempts: 2,
+			Attempts: 5,
 			Delay:    1 * time.Second,
 			Backoff:  2,
 		},

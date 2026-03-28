@@ -11,7 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/vvigg0/wbtech-l3/l3/1/internal/handler"
 	"github.com/vvigg0/wbtech-l3/l3/1/internal/processor"
 	myrabbitmq "github.com/vvigg0/wbtech-l3/l3/1/internal/rabbitmq"
@@ -26,13 +25,10 @@ import (
 func Run() error {
 	zlog.Init()
 
-	if err := godotenv.Load("../.env"); err != nil {
-		return fmt.Errorf("ошибка загрузки env файла: %w", err)
-	}
+	dsn := fmt.Sprintf("host=%v port=%v dbname=%v user=%v password=%v sslmode=disable",
+		os.Getenv("POSTGRES_HOST"), os.Getenv("POSTGRES_PORT"), os.Getenv("POSTGRES_DB"),
+		os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD"))
 
-	dsn := os.Getenv("DB_DSN")
-	serverPort := os.Getenv("PORT")
-	rabbitURL := os.Getenv("RABBITMQ_URL")
 	botToken := os.Getenv("BOT_TOKEN")
 	proxy := os.Getenv("PROXY")
 
@@ -51,6 +47,8 @@ func Run() error {
 	}
 
 	proc := processor.New(bot, repo)
+
+	rabbitURL := "amqp://guest:guest@rabbit:5672/"
 	rabbit, err := myrabbitmq.New(rabbitURL, proc.HandleMessage)
 	if err != nil {
 		return fmt.Errorf("ошибка инициализации rabbit: %w", err)
@@ -92,11 +90,11 @@ func Run() error {
 	registerRoutes(router, h)
 
 	srv := &http.Server{
-		Addr:    serverPort,
+		Addr:    ":8080",
 		Handler: router}
 
 	wg.Go(func() {
-		zlog.Logger.Info().Msgf("сервер запущен на %s", serverPort)
+		zlog.Logger.Info().Msgf("сервер запущен")
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			select {
 			case errorCh <- fmt.Errorf("ошибка сервера: %w", err):
