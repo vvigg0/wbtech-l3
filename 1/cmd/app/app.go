@@ -88,7 +88,8 @@ func Run() error {
 
 	router := ginext.New("")
 	registerRoutes(router, h)
-
+	router.Static("/static", "./web")
+	router.LoadHTMLFiles("./web/index.html")
 	srv := &http.Server{
 		Addr:    ":8080",
 		Handler: router}
@@ -125,6 +126,9 @@ func Run() error {
 }
 
 func registerRoutes(engine *ginext.Engine, handler *handler.Handler) {
+	engine.GET("/", func(ctx *ginext.Context) {
+		ctx.HTML(200, "index.html", nil)
+	})
 	engine.GET("/notify/:id", handler.GetNotificationStatus)
 	engine.POST("/notify", handler.CreateNotification)
 

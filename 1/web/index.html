@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delayed Notifier</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Delayed Notifier</h1>
+      <p class="subtitle">Создание, проверка статуса и удаление уведомлений</p>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <h2>Создать уведомление</h2>
+
+        <form id="notify-form">
+          <div id="notifications-list">
+            <div class="notif-item">
+              <div class="field">
+                <label>Текст</label>
+                <textarea name="text" rows="3" placeholder="Например: Напомни выпить воду" required></textarea>
+              </div>
+
+              <div class="field">
+                <label>Telegram ID</label>
+                <input name="telegram_ID" type="number" placeholder="123456789" required />
+              </div>
+
+              <div class="field">
+                <label>Время отправки</label>
+                <input name="send_at" type="datetime-local" required />
+              </div>
+            </div>
+          </div>
+
+          <div class="row buttons-row">
+            <button type="button" id="add-notification-btn" class="secondary-btn">+ Добавить ещё</button>
+            <button type="submit">Отправить</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Проверить статус</h2>
+
+        <form id="status-form">
+          <div class="field">
+            <label>ID уведомления</label>
+            <input id="status-id" type="text" placeholder="Введите ID" required />
+          </div>
+          <button type="submit">Получить статус</button>
+        </form>
+
+        <div id="status-result" class="result hidden"></div>
+      </section>
+
+      <section class="card">
+        <h2>Удалить уведомление</h2>
+
+        <form id="delete-form">
+          <div class="field">
+            <label>ID уведомления</label>
+            <input id="delete-id" type="text" placeholder="Введите ID" required />
+          </div>
+          <button type="submit" class="danger-btn">Удалить</button>
+        </form>
+
+        <div id="delete-result" class="result hidden"></div>
+      </section>
+
+      <section class="card">
+        <h2>Ответ сервера</h2>
+        <pre id="server-response" class="response-box">Пока пусто</pre>
+      </section>
+    </main>
+  </div>
+
+  <template id="notif-template">
+    <div class="notif-item">
+      <div class="field">
+        <label>Текст</label>
+        <textarea name="text" rows="3" placeholder="Например: Позвонить клиенту" required></textarea>
+      </div>
+
+      <div class="field">
+        <label>Telegram ID</label>
+        <input
+          name="telegram_ID"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]+"
+          placeholder="Например: 1433333784"
+          required
+        />
+      </div>
+
+      <div class="field">
+        <label>Дата и время отправки</label>
+        <input
+          name="send_at"
+          type="datetime-local"
+          step="60"
+          required
+        />
+      </div>
+
+      <button type="button" class="remove-btn">Удалить блок</button>
+    </div>
+  </template>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
